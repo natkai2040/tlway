@@ -1,10 +1,11 @@
 import Timeline from 'react-calendar-timeline'
 import 'react-calendar-timeline/lib/Timeline.css'
 import moment from 'moment'
-import { useState } from 'react'
+import { useState, useEffect} from 'react'
 import "./TimelineDisplay.css";
 import 'boxicons' // icons 
 import FloatingDescriptionBox from './FloatingDescriptionBox.jsx';
+import EventCard from './EventCard.jsx';
 
 export default function TimelineDisplay({initialItems, initialGroups}) { 
     const [openModal, setOpenModal]= useState(null) // ItemID for open Description Boxes
@@ -12,12 +13,12 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
     const [items, setItems] = useState(initialItems) // 
     const [nextOpenId, setNextOpenId] = useState(items.length+1) // 
     const [tagList, setTagList] = useState([]) // 
+    const [isEditing, setIsEditing]= useState(false) // ItemID for open Description Boxes
     
     const group_colors = ['red', 'orange', 'yellow', 'lightgreen', 'darkgreen', 'lightblue', 'darkblue', 'purple', 'pink', 'brown', 'grey', 'gold']
     const hex_colors = ['#eb2f29','#f69548','#fecb18','#7ac142','#2bb6e6','#00a34d','#015396','#914499','#db74ae','#a15c2f','#7c878e','#978e2e'] 
     // const boxicon_names = ['radio-circle','cake', 'star', 'graduation', 'bullseye', 'certification', 'circle', 'heart'] // For Future Customization
     
-
     /**
      *  Creates New Blank Item Inside groupId, sets its time to _time
      * @param {Int16Array} _groupId 
@@ -37,8 +38,8 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
             border: '0px'
           }, 
           primaryColor: '#00000000',
-          longDescription: "This is a long item description",
-          tags: ["CharacterA", "SettingB", "Action"]
+          longDescription: "Description",
+          tags: []
         }
       }
       setNextOpenId((prev) => {return (prev + 1)});
@@ -64,6 +65,10 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
       let newItem = { ... getItemById(itemId) }
       newItem.start_time = dragTime
       newItem.end_time = dragTime + 3600000
+      replaceItem(itemId, newItem)
+    }
+
+    function replaceItem(itemId, newItem) {
       removeItemById(itemId)
       setItems((prev) => { return [... prev, newItem]})
     }
@@ -78,7 +83,6 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
     }
 
     /**
-     * 
      * @param {Int16Array} id 
      * @returns Item reference or undefined
      */
@@ -87,18 +91,29 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
     }
 
     function selectItem(itemId, e, time) { // spawn a Description box
+      console.log('selectitem')
       setOpenModal(itemId)
     }
 
     function deselectItem(e) { //Delete all Description boxes when deselected
+      console.log('deselectitem')
       setOpenModal(null)
+      console.log("openmodal", openModal)
     }
     // Requires GroupColours
     function idToColorClassName(_group_id){ 
-      return group_colors[_group_id%group_colors.length]
+      if (_group_id < 0){ // BLANK PADDING ROW
+        return "blank"
+      } else {
+        return group_colors[_group_id%group_colors.length]
+      }
     }
     function idToHex(_group_id){ 
       return hex_colors[_group_id%hex_colors.length]
+    }
+    function idToGroupName(_group_id){ 
+      // console.log(_group_id)
+      return groups.find((gr) => {return gr.id == _group_id}).title
     }
 
     /**
@@ -107,26 +122,20 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
      * @returns JSX object containing that group's component to be rendered. 
      */
     function CustomGroupRenderer ({ group }){
-      return (
-        <div style={{ position: 'relative' }}>
-          {/* Background line behind the group */}
-          <div
-            class="subwayline"
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              width: '100%',
-              height: '20%',
-              backgroundColor: group.color, // Custom color for each group
-              zIndex: -1,
-              opacity: 1, // Adjust opacity to make it less intense
-            }}
-          />
-          {/* Group label */}
+      if (group.id < 0){
+        return (
+        <div class="group_box" >
           <span>{group.title}</span>
         </div>
-      );
+        );
+      } else {
+        return (
+          <div class="group_box" >
+            <span>{group.title}</span>
+            <span><box-icon name='dots-horizontal-rounded' color="white"></box-icon></span>
+          </div>
+        );
+      }
     };
 
     /**
@@ -142,6 +151,7 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
       }) {
       const { left: leftResizeProps, right: rightResizeProps } = getResizeProps()
       const color = idToHex(item.group)
+      const groupName = idToGroupName(item.group) // TODO: Pass in group props better
       item.itemProps.primaryColor = color
       return (
         <div {...getItemProps(item.itemProps)}>
@@ -155,8 +165,18 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
             {itemContext.title}
           </div>
           {itemContext.useResizeHandle ? <div {...rightResizeProps} /> : ''}
+          
+          {openModal == item.id ?
+          <EventCard
+            item={item} 
+            groupName={groupName} 
+            removeItemById={removeItemById} 
+            replaceItem={replaceItem} 
+            deselectItem={deselectItem}
+            
+          /> : ''}
 
-          {openModal == item.id ? <FloatingDescriptionBox item={item}/> : ''}
+          {/* {openModal == item.id ? <FloatingDescriptionBox item={item}/> : ''} */}
         </div>
         
       )
@@ -165,14 +185,43 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
     function addNewGroup() {
       const newGroupId = groups.length + 1
       const newGroup = {id: newGroupId, title: "Arc "+newGroupId}
+      const blankGroups = {}
+      console.log(newGroup)
       setGroups((prev) => [...prev, newGroup])
     }
+    
+    function createArrayWithIds(start, end){ // Creates blank groups
+      return Array.from({ length: (end - start) + 1 }, (_, i) => ({
+        id: start + i,
+        title: ''
+      }));
+    };
+
+    function groupWithPadding(paddingAmount){ // adds negative ID blankspace
+      const beforePadding = createArrayWithIds(-paddingAmount, -1)
+      const afterPadding = createArrayWithIds(-2*paddingAmount, -paddingAmount-1)
+      return [...beforePadding, ... groups, ...afterPadding]
+      // return [{id: -1, title: ''}, ... groups, ...afterPadding]
+    }
+
+    // useEffect(() => {
+    //   console.log("openModal has changed:", openModal);
+    // }, [openModal]);
 
     // JSX
     return (
        <div>
+        <button className="add_arc_button" onClick={(ev) => { ev.preventDefault(); addNewGroup();}}>
+              <box-icon class="text_icon_left" type='solid' name='train' color="white"></box-icon>
+              <span>Create New Arc</span>
+        </button>
+        {/* <button className="add_arc_button" onClick={(ev) => { ev.preventDefault(); console.log("Import CSV");}}>
+              <box-icon class="text_icon_left" name='import' color="white"></box-icon>
+              <span>Import Timeline</span>
+        </button> */}
+        <i>Click on a line to add a event!</i>
         <Timeline
-          groups={groups}
+          groups={groupWithPadding(4)}
           items={items}
           defaultTimeStart={moment().add(-12, 'hour')}
           defaultTimeEnd={moment().add(12, 'hour')}
@@ -183,13 +232,11 @@ export default function TimelineDisplay({initialItems, initialGroups}) {
           groupRenderer={({ group }) => {return <CustomGroupRenderer group = {group}/>}}
           itemRenderer={defaultItemRenderer}
           horizontalLineClassNamesForGroup={group => {return [idToColorClassName(group.id)]} } // colour based on id.
+          lineHeight= '30'
         />
-        <form>
-            <button onClick={(ev) => { ev.preventDefault(); addNewGroup();}}>Add Arc</button>
-        </form>
-        <form>
-            <button onClick={(ev) => { ev.preventDefault(); refreshTagList();}}>Refresh Tags</button>
-        </form>
+
+
+            <button className="refresh_tags_button" onClick={(ev) => { ev.preventDefault(); refreshTagList();}}>Refresh Tags</button>
         <h2>Tags</h2>
             {tagList.map((tag) => {
                 return (

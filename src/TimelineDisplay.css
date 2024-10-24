@@ -123,6 +123,11 @@
     border: 0px
 }
 
+.rct-sidebar-row .gold,
+.react-calendar-timeline .rct-horizontal-lines .blank {
+    border: 0px
+}
+
 .rct-dateHeader {
     color: black
 }
@@ -152,7 +157,7 @@
     position: absolute;
 }
 
-
+/* 
 .description_box { 
     width: auto;
     display:flex;
@@ -164,4 +169,38 @@
 
     color: #000000;
     align-items: start;
+} */
+
+.arc-options-button { 
+    color: "white"
 }
+
+.group_box{
+    display: flex; 
+    flex: 1; 
+    align-items: center;
+    flex-direction: row;
+}
+
+.add_arc_button{
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.refresh_tags_button {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.text_icon_left{
+    margin: 0em .2em 0em 0em;
+}
+/* 
+.event_card {
+    z-index: 91;
+    position: relative;
+} */

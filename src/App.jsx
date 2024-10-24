@@ -8,7 +8,9 @@ import moment from 'moment'
 function App() {
   const sampleGroups = [
     { id: 1, title: 'Arc 1'},
-    { id: 2, title: 'Arc 2'}
+    { id: 2, title: 'Arc 2'},
+    { id: 3, title: 'Arc 3'},
+    { id: 4, title: 'Arc 4'},
   ]
   const sampleItems = [
     {
@@ -16,7 +18,7 @@ function App() {
       group: 1,
       title: 'Default 1',
       start_time: moment(),
-      end_time: moment().add(1, 'hour'),
+      end_time: moment().add(.25, 'hour'),
       itemProps: {
         style: {
           background: '#00000000',
@@ -31,8 +33,8 @@ function App() {
       id: 2,
       group: 2,
       title: 'Default 2',
-      start_time: moment().add(-0.5, 'hour'),
-      end_time: moment().add(0.5, 'hour'),
+      start_time: moment().add(0.5, 'hour'),
+      end_time: moment().add(0.525, 'hour'),
       itemProps: {
         style: {
           background: '#00000000',
@@ -48,7 +50,7 @@ function App() {
       group: 1,
       title: 'Default 3',
       start_time: moment().add(2, 'hour'),
-      end_time: moment().add(3, 'hour'),
+      end_time: moment().add(2.25, 'hour'),
       itemProps: {
         style: {
           background: '#00000000',
@@ -62,9 +64,9 @@ function App() {
   ]
 
   return (
-    <>
+    <div>
     <TimelineDisplay initialGroups={sampleGroups} initialItems={sampleItems}/>
-    </>
+    </div>
   )
 }
 
